@@ -88,4 +88,32 @@ class AuthController extends Controller
             ? back()->with(['status' => 'Link enviado para o seu e-mail!'])
             : back()->withErrors(['email' => 'Não conseguimos encontrar um usuário com esse e-mail.']);
     }
+
+    // Exibe a tela de nova senha
+    public function showResetForm(Request $request, $token)
+    {
+        return view('auth.reset-password', ['token' => $token, 'email' => $request->email]);
+    }
+
+    // Salva a nova senha
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => 'required|min:8|confirmed', // 'confirmed' exige o campo password_confirmation
+        ]);
+
+        // O Laravel verifica o token e troca a senha
+        $status = Password::reset(
+            $request->only('email', 'password', 'password_confirmation', 'token'),
+            function ($user, $password) {
+                $user->forceFill(['password' => Hash::make($password)])->save();
+            }
+        );
+
+        return $status === Password::PASSWORD_RESET
+            ? redirect('/')->with('status', 'Senha alterada com sucesso!')
+            : back()->withErrors(['email' => __($status)]);
+    }
 }

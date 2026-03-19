@@ -24,6 +24,21 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/recuperar', [AuthController::class, 'showForgotForm']);
 Route::post('/enviar-link-recuperacao', [AuthController::class, 'sendResetLink'])->name('password.email');
 
+// Essa rota é para onde o link do e-mail vai apontar
+
+
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
+
+// Rota para mostrar o formulário de NOVA SENHA (GET)
+
+
+Route::get('/reset-password/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
+
+// Rota para SALVAR a nova senha no banco (POST)
+
+
+Route::post('/reset-password', [AuthController::class, 'updatePassword'])->name('password.update');
+
 //Usuário logado
 
 
@@ -33,30 +48,29 @@ Route::middleware(['auth.session'])->group(function () {
         return view('dashboard');
     })->name('dashboard');
 
-    Route::get('/agendar', [AgendamentoController::class,'create'])->name('agendar.create');
-    Route::post('/agendar', [AgendamentoController::class,'store'])->name('agendar.store');
+    Route::get('/agendar', [AgendamentoController::class, 'create'])->name('agendar.create');
+    Route::post('/agendar', [AgendamentoController::class, 'store'])->name('agendar.store');
     Route::get('/agendamentos/{id}/edit', [AgendamentoController::class, 'edit']);
     Route::put('/agendamentos/{id}', [AgendamentoController::class, 'update']);
 });
 
-
 //Admin
 
 
-Route::middleware(['auth.session','admin'])->group(function () {
+Route::middleware(['auth.session', 'admin'])->group(function () {
 
-    Route::get('/clientes',[ClienteController::class,'index'])->name('clientes.index');
-    Route::get('/clientes/create',[ClienteController::class,'create'])->name('clientes.create');
-    Route::post('/clientes',[ClienteController::class,'store'])->name('clientes.store');
+    Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
+    Route::get('/clientes/create', [ClienteController::class, 'create'])->name('clientes.create');
+    Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');
 
-    Route::get('/clientes/{id}/edit',[ClienteController::class,'edit'])->name('clientes.edit');
-    Route::put('/clientes/{id}',[ClienteController::class,'update'])->name('clientes.update');
-    Route::delete('/clientes/{id}',[ClienteController::class,'destroy'])->name('clientes.destroy');
+    Route::get('/clientes/{id}/edit', [ClienteController::class, 'edit'])->name('clientes.edit');
+    Route::put('/clientes/{id}', [ClienteController::class, 'update'])->name('clientes.update');
+    Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
 
-    Route::get('/agendamentos',[AgendamentoController::class,'index'])->name('agendamentos.index');
-    Route::get('/agendamentos/{id}/edit',[AgendamentoController::class,'edit'])->name('agendamentos.edit');
-    Route::put('/agendamentos/{id}',[AgendamentoController::class,'update'])->name('agendamentos.update');
-    Route::delete('/agendamentos/{id}',[AgendamentoController::class,'destroy'])->name('agendamentos.destroy');
-    Route::get('/api/agendamentos',[AgendamentoController::class,'api']);
+    Route::get('/agendamentos', [AgendamentoController::class, 'index'])->name('agendamentos.index');
+    Route::get('/agendamentos/{id}/edit', [AgendamentoController::class, 'edit'])->name('agendamentos.edit');
+    Route::put('/agendamentos/{id}', [AgendamentoController::class, 'update'])->name('agendamentos.update');
+    Route::delete('/agendamentos/{id}', [AgendamentoController::class, 'destroy'])->name('agendamentos.destroy');
+    Route::get('/api/agendamentos', [AgendamentoController::class, 'api']);
 
 });
