@@ -5,72 +5,51 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\AgendamentoController;
 
-
-
-//Login / Registro
-
-
+// --- Login / Registro ---
 Route::get('/', [AuthController::class, 'loginForm'])->name('login.form');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
-
 Route::get('/register', [AuthController::class, 'registerForm'])->name('register.form');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
-
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// recuperar senha
-
-
+// --- Recuperação de Senha ---
 Route::get('/recuperar', [AuthController::class, 'showForgotForm']);
 Route::post('/enviar-link-recuperacao', [AuthController::class, 'sendResetLink'])->name('password.email');
-
-// Essa rota é para onde o link do e-mail vai apontar
-
-
 Route::get('/reset-password/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
-
-// Rota para mostrar o formulário de NOVA SENHA (GET)
-
-
-Route::get('/reset-password/{token}', [AuthController::class, 'showResetForm'])->name('password.reset');
-
-// Rota para SALVAR a nova senha no banco (POST)
-
-
 Route::post('/reset-password', [AuthController::class, 'updatePassword'])->name('password.update');
 
-//Usuário logado
-
-
+// --- Usuário Logado (Dashboard e Agendamento) ---
 Route::middleware(['auth.session'])->group(function () {
-
+    
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
 
+    // Rota para o calendário buscar os agendamentos (JSON)
+    Route::get('/api/agendamentos', [AgendamentoController::class, 'api']);
+
     Route::get('/agendar', [AgendamentoController::class, 'create'])->name('agendar.create');
     Route::post('/agendar', [AgendamentoController::class, 'store'])->name('agendar.store');
+    
+    // Edição rápida pelo próprio usuário
     Route::get('/agendamentos/{id}/edit', [AgendamentoController::class, 'edit']);
     Route::put('/agendamentos/{id}', [AgendamentoController::class, 'update']);
 });
 
-//Admin
-
-
+// --- Área Administrativa ---
 Route::middleware(['auth.session', 'admin'])->group(function () {
 
+    // Gestão de Clientes
     Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
     Route::get('/clientes/create', [ClienteController::class, 'create'])->name('clientes.create');
     Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');
-
     Route::get('/clientes/{id}/edit', [ClienteController::class, 'edit'])->name('clientes.edit');
     Route::put('/clientes/{id}', [ClienteController::class, 'update'])->name('clientes.update');
     Route::delete('/clientes/{id}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
 
+    // Gestão Geral de Agendamentos
     Route::get('/agendamentos', [AgendamentoController::class, 'index'])->name('agendamentos.index');
     Route::get('/agendamentos/{id}/edit', [AgendamentoController::class, 'edit'])->name('agendamentos.edit');
     Route::put('/agendamentos/{id}', [AgendamentoController::class, 'update'])->name('agendamentos.update');
     Route::delete('/agendamentos/{id}', [AgendamentoController::class, 'destroy'])->name('agendamentos.destroy');
-    Route::get('/api/agendamentos', [AgendamentoController::class, 'api']);
-
 });
