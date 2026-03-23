@@ -8,26 +8,29 @@ use App\Models\Cliente;
 
 class AgendamentoController extends Controller
 {
-
     public function index()
     {
-
         $agendamentos = Agendamento::with('cliente')->get();
-
         return view('agendamentos.index', compact('agendamentos'));
-
     }
 
-    public function api()
+    public function api(Request $request)
     {
-        $agendamentos = Agendamento::with('cliente')->get()->map(function ($item) {
+        $query = Agendamento::with('cliente');
+
+        // Filtro por barbeiro funcionando certinho!
+        if ($request->has('barbeiro') && $request->barbeiro != '') {
+            $query->where('barbeiro', $request->barbeiro);
+        }
+
+        $agendamentos = $query->get()->map(function ($item) {
             return [
-                'title' => $item->cliente->nome . " | " . $item->servico,
+                // Adicionado '?? 'Cliente'' para evitar erro se o cliente sumir do banco
+                'title' => ($item->cliente->nome ?? 'Cliente') . " | " . $item->servico,
                 'start' => $item->data . 'T' . $item->hora,
                 'end' => $item->data . 'T' . date('H:i', strtotime($item->hora) + 3600),
-                'textColor' => '#000000',
                 'backgroundColor' => '#d4af37',
-                'borderColor' => '#b8962e',
+                'textColor' => '#000000',
             ];
         });
 
@@ -36,9 +39,7 @@ class AgendamentoController extends Controller
 
     public function create()
     {
-
         return view('agendamentos.create');
-
     }
 
     public function store(Request $request)
@@ -50,25 +51,23 @@ class AgendamentoController extends Controller
             'hora' => 'required'
         ]);
 
+        // Trava individual por barbeiro correta!
         $conflito = Agendamento::where('barbeiro', $request->barbeiro)
             ->where('data', $request->data)
             ->where('hora', $request->hora)
             ->exists();
 
         if ($conflito) {
-
             return back()->withErrors(['erro_agenda' => 'Este barbeiro já possui um cliente agendado para este horário!']);
         }
 
-        $nome = session('user_name');
-        $cliente = Cliente::where('nome', $nome)->first();
-
-        if (!$cliente) {
-            $cliente = Cliente::create([
-                'nome' => $nome,
-                'telefone' => ''
-            ]);
-        }
+        // Ajuste: Fallback caso a session falhe (tenta pegar do Auth se houver)
+        $nome = session('user_name') ?? auth()->user()->name ?? 'Cliente Deslogado';
+        
+        $cliente = Cliente::firstOrCreate(
+            ['nome' => $nome],
+            ['telefone' => ''] // Cria com telefone vazio se não existir
+        );
 
         Agendamento::create([
             'cliente_id' => $cliente->id,
@@ -80,5 +79,4 @@ class AgendamentoController extends Controller
 
         return redirect('/dashboard')->with('status', 'Agendamento realizado com sucesso!');
     }
-
 }
