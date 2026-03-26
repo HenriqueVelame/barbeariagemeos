@@ -2,245 +2,212 @@
 <html lang="pt-br">
 
 <head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Barbearia MS</title>
 
-<meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
-<title>Dashboard</title>
+    <style>
+        body {
+            display: flex;
+            background: #0a0a0a;
+            color: white;
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+        }
 
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+        /* SIDEBAR */
+        .sidebar {
+            width: 240px;
+            background: #151515;
+            padding: 25px;
+            border-right: 2px solid #d4af37;
+            min-height: 100vh;
+        }
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+        .sidebar h2 {
+            color: #d4af37;
+            text-align: center;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+        }
 
-<style>
+        /* MENU */
+        .menu a {
+            display: block;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #222;
+            color: #ccc;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: 0.3s;
+        }
 
-body{
+        .menu a:hover {
+            background: #d4af37;
+            color: black;
+            transform: scale(1.03);
+        }
 
-display:flex;
+        /* MAIN */
+        .main {
+            flex: 1;
+        }
 
-background:#121212;
+        /* HEADER */
+        .header {
+            background: #151515;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
 
-color:white;
+        .header h3 {
+            color: #d4af37;
+        }
 
-font-family:Arial;
+        /* BOTÃO SAIR */
+        .header button {
+            background: #d4af37;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-margin:0;
+        /* CONTEUDO */
+        .content {
+            padding: 30px;
+        }
 
-}
+        /* FILTRO INDIVIDUAL POR BARBEIRO */
+        .filter-container {
+            margin-bottom: 20px;
+            background: #151515;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-.sidebar{
+        .filter-container select {
+            background: #222;
+            color: #d4af37;
+            border: 1px solid #d4af37;
+            padding: 8px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-width:230px;
-
-background:#1e1e1e;
-
-padding:20px;
-
-}
-
-.menu a{
-
-display:block;
-
-padding:12px;
-
-margin-bottom:10px;
-
-background:#2a2a2a;
-
-color:white;
-
-text-decoration:none;
-
-border-radius:6px;
-
-}
-
-.menu a:hover{
-
-background:#00c2ff;
-
-color:black;
-
-}
-
-.main{
-
-flex:1;
-
-}
-
-.header{
-
-background:#1f1f1f;
-
-padding:15px;
-
-display:flex;
-
-justify-content:space-between;
-
-}
-
-.content{
-
-padding:25px;
-
-}
-
-#calendar{
-
-background:white;
-
-padding:20px;
-
-border-radius:10px;
-
-color:black;
-
-}
-
-.card{
-
-background:#1e1e1e;
-
-padding:20px;
-
-border-radius:10px;
-
-margin-bottom:20px;
-
-}
-
-</style>
-
+        /* CALENDARIO */
+        #calendar {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            color: black;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="sidebar">
+    <div class="sidebar">
+        <h2>💈 Barbearia MS</h2>
+        <div class="menu">
+            @if(session('user_role') == 'admin')
+                <a href="/dashboard">Dashboard</a>
+                <a href="/clientes">Clientes</a>
+                <a href="/agendamentos">Agendamentos</a>
+            @else
+                <a href="/dashboard">Dashboard</a>
+                <a href="/agendar">Agendar Corte</a>
+            @endif
+        </div>
+    </div>
 
-<h2>Barbearia</h2>
+    <div class="main">
+        <div class="header">
+            <h3>Bem vindo {{ session('user_name') }}</h3>
+            <form method="POST" action="/logout">
+                @csrf
+                <button>Sair</button>
+            </form>
+        </div>
 
-<div class="menu">
+        <div class="content">
+            <div class="filter-container">
+                <label for="barbeiroFiltro">Visualizar Agenda de:</label>
+                <select id="barbeiroFiltro">
+                    <option value="">Todos os Barbeiros</option>
+                    <option value="João">João</option>
+                    <option value="Carlos">Carlos</option>
+                    <option value="Pedro">Pedro</option>
+                </select>
+            </div>
 
-@if(session('user_role') == 'admin')
+            <div id="calendar"></div>
+        </div>
+    </div>
 
-<a href="/dashboard">Dashboard</a>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var calendarEl = document.getElementById('calendar');
+            var filtro = document.getElementById('barbeiroFiltro');
 
-<a href="/clientes">Clientes</a>
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                locale: 'pt-br',
+                height: 650,
+                slotMinTime: "08:00:00",
+                slotMaxTime: "20:00:00",
+                allDaySlot: false,
 
-<a href="/agendamentos">Agendamentos</a>
+                // URL inicial
+                events: '/api/agendamentos',
 
-@else
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
 
-<a href="/dashboard">Dashboard</a>
+                dateClick: function (info) {
+                    window.location = "/agendar?data=" + info.dateStr;
+                },
 
-<a href="/agendar">Agendar Corte</a>
+                eventClick: function (info) {
+                    alert(info.event.title);
+                }
+            });
 
-@endif
+            calendar.render();
 
-</div>
-
-</div>
-
-<div class="main">
-
-<div class="header">
-
-<h3>Bem vindo {{ session('user_name') }}</h3>
-
-<form method="POST" action="/logout">
-
-@csrf
-
-<button>Sair</button>
-
-</form>
-
-</div>
-
-<div class="content">
-
-@if(session('user_role') == 'admin')
-
-<div class="card">
-
-<h4>Painel Admin</h4>
-
-<p>Gerencie os agendamentos no calendário.</p>
-
-</div>
-
-@else
-
-<div class="card">
-
-<h4>Área Cliente</h4>
-
-<p>Clique em um horário para agendar.</p>
-
-</div>
-
-@endif
-
-<div id="calendar"></div>
-
-</div>
-
-</div>
-
-<script>
-
-document.addEventListener('DOMContentLoaded', function() {
-
-var calendarEl=document.getElementById('calendar');
-
-var calendar=new FullCalendar.Calendar(calendarEl,{
-
-initialView:'timeGridWeek',
-
-locale:'pt-br',
-
-height:650,
-
-slotMinTime:"08:00:00",
-
-slotMaxTime:"20:00:00",
-
-allDaySlot:false,
-
-events:'/api/agendamentos',
-
-headerToolbar:{
-
-left:'prev,next today',
-
-center:'title',
-
-right:'dayGridMonth,timeGridWeek,timeGridDay'
-
-},
-
-dateClick:function(info){
-
-window.location="/agendar?data="+info.dateStr;
-
-},
-
-eventClick:function(info){
-
-alert(info.event.title);
-
-}
-
-});
-
-calendar.render();
-
-});
-
-</script>
-
+            // Lógica para trocar a agenda individualmente sem dar F5 na página
+            filtro.addEventListener('change', function() {
+                var barbeiroSelecionado = this.value;
+                
+                // Remove a fonte de dados antiga
+                calendar.removeAllEventSources();
+                
+                // Adiciona a nova fonte com o filtro via parâmetro na URL
+                calendar.addEventSource({
+                    url: '/api/agendamentos',
+                    extraParams: {
+                        barbeiro: barbeiroSelecionado
+                    }
+                });
+            });
+        });
+    </script>
 </body>
-
 </html>
